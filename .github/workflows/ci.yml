@@ -1,0 +1,41 @@
+name: EvenFlow CI
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: [events_api, bookings_api, notifications_api]
+    defaults:
+      run:
+        working-directory: services/${{ matrix.service }}
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: evenflow_dev
+      EVENTS_URL: http://127.0.0.1:3001/graphql
+      KAFKA_BROKERS: 127.0.0.1:9092
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: evenflow_dev
+        ports: [5432:5432]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "4.0.7"
+          bundler: "4.0.22"
+          bundler-cache: true
+          working-directory: services/${{ matrix.service }}
+      - run: bundle exec ruby ../../scripts/versions.rb
+      - run: RAILS_ENV=test bin/rails db:prepare
+      - run: bin/rails zeitwerk:check
+      - run: bundle exec rspec --format documentation

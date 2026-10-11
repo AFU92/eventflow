@@ -1,0 +1,12 @@
+.DS_Store
+.env
+.env.*
+!.env.example
+**/.bundle/
+**/vendor/bundle/
+**/log/*
+**/tmp/*
+**/storage/*
+**/coverage/
+**/config/master.key
+**/config/credentials/*.key
